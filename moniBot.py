@@ -3,11 +3,21 @@ from decouple import config
 from datetime import date
 from pathlib import Path
 
-class MoniBot(discord.Client):
+class User():
+	def __init__(self, discordUser = None, whereToSendAlerts = None):
+		self.discordUser = discordUser
+		self.whereToSendAlerts = whereToSendAlerts
 
+	def __eq__(self, o: object):
+		return self.discordUser == o
+
+	def __hash__(self):
+		return hash(self.discordUser)
+
+
+class MoniBot(discord.Client):
 	async def on_ready(self):
 		self.guildsWatched = {}
-		await self.change_presence(status=discord.Status.invisible)	
 		print(f'Logged in as {self.user}')
 		
 	
@@ -17,26 +27,40 @@ class MoniBot(discord.Client):
 			for guild in self.guildsWatched:
 				if member in self.guildsWatched[guild]:
 					return
-			
+		
 			if before.channel != after.channel:
 				print(f'{member} joined {after.channel}')
-				for monitor in self.guildsWatched[after.channel.guild.id]:
-					await monitor.send(f'{member} entrou no canal {after.channel}.')
-
+				for user in self.guildsWatched[after.channel.guild.id]:
+					await user.whereToSendAlerts.send(f'{member} entrou no canal {after.channel}.')
+	
 
 	async def on_message(self, message):
-		if message.content.startswith('!start'):
-			guild = message.guild.id
-			if guild not in self.guildsWatched.keys():
-				self.guildsWatched[guild] = [message.author]
-			else:
-				self.guildsWatched[guild].append(message.author)
-			
-			print(f'Now watching {message.guild.name} for {message.author}')
-			await message.author.send(f'Observando servidor {message.guild.name} para você!')
+		if(message.author.bot): 
 			return
+
+		#COMMAND -> !start
+		if message.content.startswith(('!start', '!começar', '!iniciar')):
+			guild = message.guild.id
+			user = None
+			# whereToSendAlerts = None
+			if message.raw_channel_mentions:
+				channel = message.guild.get_channel(message.raw_channel_mentions[0])
+				user = User(message.author, channel)
+			else:
+				user = User(message.author, message.author)
+
+			if guild not in self.guildsWatched.keys():
+				self.guildsWatched[guild] = set([user])
+			else:
+				self.guildsWatched[guild].add(user)
 			
-		if message.content.startswith('!stop'):
+			print('Guild watched:', self.guildsWatched)
+			print(f'Now watching {message.guild.name} for {message.author}')
+			await user.whereToSendAlerts.send(f'Observando servidor {message.guild.name} para você!')
+			return
+
+		#COMMAND -> !stop
+		if message.content.startswith(('!stop', '!encerrar')):
 			guild = message.guild.id
 			if guild in self.guildsWatched.keys():
 				if message.author in self.guildsWatched[guild]:
@@ -44,11 +68,12 @@ class MoniBot(discord.Client):
 						self.guildsWatched.pop(guild)
 					else:
 						self.guildsWatched[guild].remove(message.author)
-						
+					
+					print(f'Stopped watching {message.guild.name} for {message.author}')
 					await message.author.send(f'Parei de observar o servidor {message.guild.name} para você!')
 			return
 
-		# matriculas_path = Path().joinpath('matriculas', f'{date.today().strftime("%d-%m-%y")}.txt')
+		 # matriculas_path = Path().joinpath('matriculas', f'{date.today().strftime("%d-%m-%y")}.txt')
 		# if message.channel.type == discord.ChannelType.text and message.author == self.monitores[1] and message.channel.name == 'matriculas':
 		
 		# 	with matriculas_path.open('a+') as file:
