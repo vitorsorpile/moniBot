@@ -9,10 +9,13 @@ class User():
 		self.whereToSendAlerts = whereToSendAlerts
 
 	def __eq__(self, o: object):
-		return self.discordUser == o
+		if type(o) == User:
+			return self.discordUser.id == o.discordUser.id
+		
+		return self.discordUser.id == o
 
 	def __hash__(self):
-		return hash(self.discordUser)
+		return hash(self.discordUser.id)
 
 
 class MoniBot(discord.Client):
@@ -39,7 +42,7 @@ class MoniBot(discord.Client):
 			return
 
 		#COMMAND -> !start
-		if message.content.startswith(('!start', '!começar', '!iniciar')):
+		if message.content.startswith(('!start', '!iniciar')):
 			guild = message.guild.id
 			user = None
 			# whereToSendAlerts = None
@@ -51,10 +54,12 @@ class MoniBot(discord.Client):
 
 			if guild not in self.guildsWatched.keys():
 				self.guildsWatched[guild] = set([user])
-			else:
-				self.guildsWatched[guild].add(user)
 			
-			print('Guild watched:', self.guildsWatched)
+			elif user in self.guildsWatched[guild]:
+				self.guildsWatched[guild].remove(message.author.id)
+
+			self.guildsWatched[guild].add(user)
+
 			print(f'Now watching {message.guild.name} for {message.author}')
 			await user.whereToSendAlerts.send(f'Observando servidor {message.guild.name} para você!')
 			return
@@ -63,11 +68,11 @@ class MoniBot(discord.Client):
 		if message.content.startswith(('!stop', '!encerrar')):
 			guild = message.guild.id
 			if guild in self.guildsWatched.keys():
-				if message.author in self.guildsWatched[guild]:
+				if message.author.id in self.guildsWatched[guild]:
 					if len(self.guildsWatched[guild]) == 1:
 						self.guildsWatched.pop(guild)
 					else:
-						self.guildsWatched[guild].remove(message.author)
+						self.guildsWatched[guild].remove(message.author.id)
 					
 					print(f'Stopped watching {message.guild.name} for {message.author}')
 					await message.author.send(f'Parei de observar o servidor {message.guild.name} para você!')
