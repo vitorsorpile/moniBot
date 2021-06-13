@@ -1,4 +1,5 @@
 import discord
+from discord.ext.commands import command
 from decouple import config
 from datetime import date
 from pathlib import Path
@@ -36,7 +37,6 @@ class MoniBot(discord.Client):
 				for user in self.guildsWatched[after.channel.guild.id]:
 					await user.whereToSendAlerts.send(f'{member} entrou no canal {after.channel}.')
 	
-
 	async def on_message(self, message):
 		if(message.author.bot): 
 			return
@@ -62,6 +62,7 @@ class MoniBot(discord.Client):
 
 			print(f'Now watching {message.guild.name} for {message.author}')
 			await user.whereToSendAlerts.send(f'Observando servidor {message.guild.name} para você!')
+			await message.add_reaction('🤝') 
 			return
 
 		#COMMAND -> !stop
@@ -76,6 +77,7 @@ class MoniBot(discord.Client):
 					
 					print(f'Stopped watching {message.guild.name} for {message.author}')
 					await message.author.send(f'Parei de observar o servidor {message.guild.name} para você!')
+					await message.add_reaction('👋')
 			return
 
 		 # matriculas_path = Path().joinpath('matriculas', f'{date.today().strftime("%d-%m-%y")}.txt')
