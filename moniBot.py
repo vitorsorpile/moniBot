@@ -74,13 +74,14 @@ class Alerts(commands.Cog):
 class MoniBot(commands.Bot):
    async def on_ready(self):
       self.guildsWatched = {}
+      await self.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name='!start | !help'))
       print(f'Logged in as {self.user}')
       
    async def on_voice_state_update(self, member, before, after):
       if after.channel and after.channel.guild.id in self.guildsWatched.keys():
          guild = after.channel.guild
-         for guild in self.guildsWatched:
-            if member in self.guildsWatched[guild]:
+         if guild.id in self.guildsWatched:
+            if member.id in self.guildsWatched[guild.id]:
                return
       
          if before.channel != after.channel:
@@ -92,7 +93,7 @@ class MoniBot(commands.Bot):
 if __name__ == '__main__':
    intents = discord.Intents.default()  
    intents.members = True
-   
+
    bot = MoniBot(intents=intents, command_prefix='!', case_insensitive=True)
    bot.add_cog(Alerts(bot))
 
