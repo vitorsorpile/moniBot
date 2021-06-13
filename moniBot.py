@@ -23,9 +23,14 @@ class Alerts(commands.Cog):
       super().__init__()
       self.bot = bot
 
-   @commands.command(aliases=['start', 'iniciar'])
+   @commands.command(name='start', aliases=['iniciar'])
    @commands.has_any_role('Monitor', 'Monitores')
    async def _start(self, ctx):
+      '''
+         -> Inicia o bot para avisá-lo sempre que alguém se conectar a um canal de voz. Por padrão, os alertas serão
+         enviados por mensagem privada, mas pode ser passado um canal de texto no formato !start #canal-de-texto para 
+         que os alertas sejam enviados nesse canal.
+      '''
       message = ctx.message
       guild = message.guild.id
       user = None
@@ -44,13 +49,15 @@ class Alerts(commands.Cog):
       self.bot.guildsWatched[guild].add(user)
 
       print(f'Now watching {message.guild.name} for {message.author}')
-      await user.whereToSendAlerts.send(f'Observando servidor {message.guild.name} para você!')
       await message.add_reaction('🤝') 
 
 
-   @commands.command(aliases=['stop', 'encerrar'])
+   @commands.command(name='stop', aliases=['encerrar'])
    @commands.has_any_role('Monitor', 'Monitores')
    async def _stop(self, ctx):
+      '''
+         -> O bot para de avisá-lo quando alguém se conectar a um canal de voz.
+      '''
       message = ctx.message
       guild = message.guild.id
       if guild in self.bot.guildsWatched.keys():
@@ -61,7 +68,6 @@ class Alerts(commands.Cog):
                self.bot.guildsWatched[guild].remove(message.author.id)
             
             print(f'Stopped watching {message.guild.name} for {message.author}')
-            await message.author.send(f'Parei de observar o servidor {message.guild.name} para você!')
             await message.add_reaction('👋')
 
 
@@ -86,8 +92,13 @@ class MoniBot(commands.Bot):
 if __name__ == '__main__':
    intents = discord.Intents.default()  
    intents.members = True
-
+   
    bot = MoniBot(intents=intents, command_prefix='!', case_insensitive=True)
    bot.add_cog(Alerts(bot))
+
+   bot.description = '''
+   O Moni Bot foi desenvolvido com o intuito de auxiliar os(as) monitores(as) que fazem seus atendimentos via Discord.
+   O código pode ser acessado em: https://github.com/vitorsorpile/moniBot 
+   Qualquer dúvida/sugestão por favor entre em contato em vitorsorpile@gmail.com ou pelo Discord Vitor#9289'''
 
    bot.run(config('BOT_TOKEN'))
